@@ -118,61 +118,67 @@ class WhatsAppBotController extends Controller
         return back()->with('response', $responseMessage);
     }
 
-    private function callPingBukAPI($phoneNumber)
-    {
-        // Prepare the cURL request to the Ping/Buk API
-        $curl = curl_init();
+   private function callPingBukAPI($phoneNumber)
+{
+    // Prepare the cURL request to the Ping/Buk API
+    $curl = curl_init();
 
-        $postData = json_encode([
-            "Callsub" => $phoneNumber,
-            "UserId" => "imll",
-        ]);
+    $postData = json_encode([
+        "Callsub" => $phoneNumber,
+        "UserId" => "imll",
+    ]);
 
-        curl_setopt_array($curl, [
-            CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => $postData,
-            CURLOPT_HTTPHEADER => [
-                "apiTokenUser: CRMUser",
-                "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
-                "Content-Type: application/json"
-            ],
-        ]);
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS => $postData,
+        CURLOPT_HTTPHEADER => [
+            "apiTokenUser: CRMUser",
+            "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
+            "Content-Type: application/json"
+        ],
+    ]);
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
-        curl_close($curl);
+    $response = curl_exec($curl);
+    $err = curl_error($curl);
+    curl_close($curl);
 
-        if ($err) {
-            // Log the cURL error
-            \Log::error("cURL Error: " . $err);
-            return ['status' => 'error', 'message' => "cURL Error: " . $err];
-        } else {
-            // Log the raw API response for debugging
-            \Log::info('API Response: ', ['response' => $response]);
-            $decodedResponse = json_decode($response, true);
-            
-            // Check if the response is valid
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return ['status' => 'error', 'message' => 'Invalid JSON response.'];
-            }
+    if ($err) {
+        // Log the cURL error
+        \Log::error("cURL Error: " . $err);
+        return ['status' => 'error', 'message' => "cURL Error: " . $err];
+    } else {
+        // Log the raw API response for debugging
+        \Log::info('API Response: ', ['response' => $response]);
+        $decodedResponse = json_decode($response, true);
 
-            // Check the status in the API response
-            if (isset($decodedResponse['status'])) {
-                // Check for success status
-                if ($decodedResponse['status'] === 'success') {
-                    return ['status' => 'success', 'message' => $decodedResponse['data']]; // Assuming 'data' contains the details
-                } else {
-                    return ['status' => 'error', 'message' => $decodedResponse['message']];
-                }
+        // Check if the response is valid JSON
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return ['status' => 'error', 'message' => 'Invalid JSON response.'];
+        }
+
+        // Check for the status and message in the API response
+        if (isset($decodedResponse['status']) && isset($decodedResponse['Message'])) {
+            // Check for success status
+            if ($decodedResponse['status'] === '1' && $decodedResponse['Message'] === 'success') {
+                return [
+                    'status' => 'success', 
+                    'message' => isset($decodedResponse['Data']) ? $decodedResponse['Data'] : 'No data available.'
+                ];
             } else {
-                return ['status' => 'error', 'message' => 'Invalid response structure.'];
+                // Check if 'Message' key exists before accessing it
+                $errorMessage = isset($decodedResponse['Message']) ? $decodedResponse['Message'] : 'Unknown error occurred.';
+                return ['status' => 'error', 'message' => $errorMessage];
             }
+        } else {
+            return ['status' => 'error', 'message' => 'Invalid response structure.'];
+        }
+    
         }
     }
 }
