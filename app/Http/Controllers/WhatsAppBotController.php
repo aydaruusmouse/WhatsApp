@@ -165,30 +165,41 @@ class WhatsAppBotController extends Controller
             } else {
                 return ['status' => 'error', 'message' => 'Failed to fetch details.'];
             }
-   // Call the API
-$apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
+  $apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
+
+// Log the API response
+\Log::info('API Response Data:', $apiResponse);
 
 if ($apiResponse['status'] === 'success') {
-    // Constructing the response message
-    $data = $apiResponse['data']; // Get the Data array from the API response
-    $responseDetails = [];
+    // Check if data exists in the API response
+    if (isset($apiResponse['data']) && is_array($apiResponse['data'])) {
+        $data = $apiResponse['data'];
+        $responseDetails = [];
 
-    // Loop through the data to extract relevant fields
-    foreach ($data as $item) {
-        $responseDetails[] = "IMSI: " . $item['IMSI'] .
-                             ", ICCID: " . $item['ICCID'] .
-                             ", PIN1: " . $item['PIN1'] .
-                             ", PIN2: " . $item['PIN2'] .
-                             ", PUK1: " . $item['PUK1'] .
-                             ", PUK2: " . $item['PUK2'] .
-                             ", Activation Date: " . $item['ActivatioDate'] .
-                             ", SIM Type: " . $item['SimType'];
+        // Loop through the data to extract relevant fields
+        foreach ($data as $item) {
+            $responseDetails[] = "IMSI: " . $item['IMSI'] .
+                                 ", ICCID: " . $item['ICCID'] .
+                                 ", PIN1: " . $item['PIN1'] .
+                                 ", PIN2: " . $item['PIN2'] .
+                                 ", PUK1: " . $item['PUK1'] .
+                                 ", PUK2: " . $item['PUK2'] .
+                                 ", Activation Date: " . $item['ActivatioDate'] .
+                                 ", SIM Type: " . $item['SimType'];
+        }
+
+        // Join the details into a single string
+        if (!empty($responseDetails)) {
+            $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
+        } else {
+            $responseMessage = "Error: No details found in the response.";
+        }
+    } else {
+        \Log::error('Data not found in API response');
+        $responseMessage = "Error: Data not found in response.";
     }
-
-    // Join the details into a single string
-    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
 } else {
-    $responseMessage = "Error: " . $apiResponse['message']; // This will still handle any error responses
+    $responseMessage = "Error: " . $apiResponse['message']; // Handle error responses
 }
 
 // Reset the session state after handling the request
