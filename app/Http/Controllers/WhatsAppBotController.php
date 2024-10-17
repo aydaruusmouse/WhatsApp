@@ -251,7 +251,7 @@ class WhatsAppBotController extends Controller
         return back()->with('response', $responseMessage);
     }
 
- private function callPingBukAPI($phoneNumber)
+    private function callPingBukAPI($phoneNumber)
 {
     // Prepare the cURL request to the Ping/Buk API
     $curl = curl_init();
@@ -283,41 +283,22 @@ class WhatsAppBotController extends Controller
     curl_close($curl);
 
     if ($err) {
-        // Log the cURL error
-        \Log::error("cURL Error: " . $err);
         return ['status' => 'error', 'message' => "cURL Error: " . $err];
     } else {
-        // Log the raw API response for debugging
-        \Log::info('API Response: ', ['response' => $response]);
-
-        // Parse the API response
+        // Parse the API response (assuming it's JSON)
         $decodedResponse = json_decode($response, true);
         
-        // Check if the response is valid
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return ['status' => 'error', 'message' => 'Invalid JSON response.'];
-        }
-
-        // Check the status in the API response
-        if (isset($decodedResponse['status'])) {
-            // Check for status "1" to indicate success
-            if ($decodedResponse['status'] === '1') {
-                return [
-                    'status' => 'success',
-                    'message' => 'Success', // Set a message for success
-                    'data' => $decodedResponse['Data'] // Return the Data array
-                ];
-            } else {
-                // Return the message provided in the response
-                return [
-                    'status' => 'error',
-                    'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'
-                ];
-            }
+        if ($decodedResponse && isset($decodedResponse['status']) && $decodedResponse['status'] == '1') {
+            // Return the decoded data as well
+            return [
+                'status' => 'success',
+                'message' => 'Success',
+                'data' => $decodedResponse['Data'] // Change here to return the Data array
+            ];
         } else {
-            return ['status' => 'error', 'message' => 'Unexpected response structure.'];
+            return ['status' => 'error', 'message' => 'Failed to fetch details.'];
         }
-    // Call the API
+  // Call the API
 $apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
 
 if ($apiResponse['status'] === 'success') {
@@ -339,9 +320,8 @@ if ($apiResponse['status'] === 'success') {
 
     // Join the details into a single string
     $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
-    
 } else {
-    $responseMessage = "Error: " . $apiResponse['message']; // Now this will be defined for both cases
+    $responseMessage = "Error: " . $apiResponse['message']; // This will still handle any error responses
 }
 
 // Reset the session state after handling the request
@@ -350,7 +330,6 @@ unset($_SESSION['ping_buk_number']); // Remove the stored number
 
 return back()->with('response', $responseMessage);
 
-        
-    }
+
 }
 }
