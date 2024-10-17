@@ -16,7 +16,7 @@ class WhatsAppBotController extends Controller
         if (!session_id()) {
             session_start();
         }
-
+        
         // Define main menu and sub-menus
         $mainMenu = [
             '1. ZAAD',
@@ -27,7 +27,7 @@ class WhatsAppBotController extends Controller
             '6. Connect with agent',
         ];
 
-        // Sub-menus defined...
+        // Sub-menus...
         $zaadSubMenu = [
             "1. New ZAAD Account (Information)",
             "2. Merchant (Information)",
@@ -36,32 +36,64 @@ class WhatsAppBotController extends Controller
             "0. Go Back",
         ];
 
-        // Other sub-menus...
+        $internetSubMenu = [
+            "1. New Fiber Service",
+            "2. Internet Billing",
+            "3. Troubleshooting",
+            "0. Go Back",
+        ];
+
+        $simCardSubMenu = [
+            "1. Mushaax",
+            "2. Ping/buk",
+            "3. Telesom Services",
+            "0. Go Back",
+        ];
 
         // Default greeting and main menu
         if (in_array($userMessage, ['hi', 'hello', 'morning', 'good morning', 'asc'])) {
-            // Personalize greeting
             $responseMessage = "Good MORNING, Khalid! Please choose what we can help with today:<br>";
             $responseMessage .= implode("<br>", $mainMenu);
-            // Reset the menu state
             $_SESSION['menu_state'] = 'main';
+
+        } elseif ($_SESSION['menu_state'] === 'main') {
+            // Handle main menu selections
+            switch ($userMessage) {
+                case '1':
+                    $responseMessage = "You have chosen ZAAD services. Please select an option:<br>" . implode("<br>", $zaadSubMenu);
+                    $_SESSION['menu_state'] = 'zaad';
+                    break;
+                case '2':
+                    $responseMessage = "You have chosen Internet services. Please select an option:<br>" . implode("<br>", $internetSubMenu);
+                    $_SESSION['menu_state'] = 'internet';
+                    break;
+                case '4':
+                    $responseMessage = "You have chosen Sim Card services. Please select an option:<br>" . implode("<br>", $simCardSubMenu);
+                    $_SESSION['menu_state'] = 'sim_card';
+                    break;
+                case '6':
+                    $responseMessage = "Connecting you with an agent. Please hold on...";
+                    $_SESSION['menu_state'] = 'main'; // Reset to main menu
+                    break;
+                default:
+                    $responseMessage = "Sorry, I didn’t understand that. Please type 'hi' or 'hello' to start again.";
+            }
         } 
-        
-        // Handle main menu selections
-        elseif ($_SESSION['menu_state'] === 'main') {
-            // Handling main menu selections...
-        } 
-        
-        // Handle sub-menu options based on the current state
-        elseif ($_SESSION['menu_state'] === 'zaad') {
-            // Handling ZAAD sub-menu options...
-        } 
-        
-        // Handle Internet, Troubleshooting, Sim-card, Self-support similarly...
 
         // Handle Ping/Buk number entry
+        if ($_SESSION['menu_state'] === 'sim_card') {
+            if ($userMessage === '2') {
+                $responseMessage = "Please enter your phone number for Ping/Buk:";
+                $_SESSION['menu_state'] = 'ping_buk_number_entry'; // Set a new state to handle number entry
+            } elseif ($userMessage === '0') {
+                $responseMessage = "Going back to the main menu...";
+                $_SESSION['menu_state'] = 'main';
+                $responseMessage .= "<br>" . implode("<br>", $mainMenu);
+            }
+        } 
+        
+        // Validate Ping/Buk phone number
         if ($_SESSION['menu_state'] === 'ping_buk_number_entry') {
-            // Validate the phone number (basic validation)
             if (is_numeric($userMessage) && strlen($userMessage) === 9) {
                 $_SESSION['ping_buk_number'] = $userMessage;
 
@@ -69,7 +101,7 @@ class WhatsAppBotController extends Controller
                 $apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
                 
                 if ($apiResponse['status'] === 'success') {
-                    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "<br>Response: " . $apiResponse['message'];
+                    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: " . $apiResponse['message'];
                 } else {
                     $responseMessage = "Error: " . $apiResponse['message'];
                 }
@@ -114,7 +146,6 @@ class WhatsAppBotController extends Controller
 
         $response = curl_exec($curl);
         $err = curl_error($curl);
-
         curl_close($curl);
 
         if ($err) {
@@ -124,8 +155,6 @@ class WhatsAppBotController extends Controller
         } else {
             // Log the raw API response for debugging
             \Log::info('API Response: ', ['response' => $response]);
-
-            // Parse the API response
             $decodedResponse = json_decode($response, true);
             
             // Check if the response is valid
@@ -135,13 +164,15 @@ class WhatsAppBotController extends Controller
 
             // Check the status in the API response
             if (isset($decodedResponse['status'])) {
-                // Check for status "1" to indicate success
-                if ($decodedResponse['status'] === '1') {
-                    return ['status' => 'success', 'message' => $decodedResponse['data']]; // Adjust as necessary
+                // Check for success status
+                if ($decodedResponse['status'] === 'success') {
+                    return ['status' => 'success', 'message' => $decodedResponse['data']]; // Assuming 'data' contains the details
+                } else {
+                    return ['status' => 'error', 'message' => $decodedResponse['message']];
                 }
+            } else {
+                return ['status' => 'error', 'message' => 'Invalid response structure.'];
             }
-
-            return ['status' => 'error', 'message' => 'Unknown error occurred.'];
         }
     }
 }
