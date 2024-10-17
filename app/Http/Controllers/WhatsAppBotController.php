@@ -319,17 +319,37 @@ class WhatsAppBotController extends Controller
             return ['status' => 'error', 'message' => 'Unexpected response structure.'];
         }
     // Call the API
+// Call the API
 $apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
 
 if ($apiResponse['status'] === 'success') {
-    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: " . json_encode($apiResponse['data']);
+    // Constructing the response message
+    $data = $apiResponse['data']; // Get the Data array from the API response
+    $responseDetails = [];
+
+    // Loop through the data to extract relevant fields
+    foreach ($data as $item) {
+        $responseDetails[] = "IMSI: " . $item['IMSI'] .
+                             ", ICCID: " . $item['ICCID'] .
+                             ", PIN1: " . $item['PIN1'] .
+                             ", PIN2: " . $item['PIN2'] .
+                             ", PUK1: " . $item['PUK1'] .
+                             ", PUK2: " . $item['PUK2'] .
+                             ", Activation Date: " . $item['ActivatioDate'] .
+                             ", SIM Type: " . $item['SimType'];
+    }
+
+    // Join the details into a single string
+    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
 } else {
-    $responseMessage = "Error: " . $apiResponse['message']; // Now this will be defined for both cases
+    $responseMessage = "Error: " . $apiResponse['message']; // This will still handle any error responses
 }
 
 // Reset the session state after handling the request
 $_SESSION['menu_state'] = 'sim_card';
 unset($_SESSION['ping_buk_number']); // Remove the stored number
+
+
 
      // Return the response to the view
         return back()->with('response', $responseMessage);
