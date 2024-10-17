@@ -1,11 +1,11 @@
-
 <?php
 
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class WhatsAppBotController extends Controller {
+class WhatsAppBotController extends Controller
+{
     public function testMessage(Request $request)
     {
         // Get the message sent by the user
@@ -251,8 +251,7 @@ class WhatsAppBotController extends Controller {
         return back()->with('response', $responseMessage);
     }
 
-    
-   private function callPingBukAPI($phoneNumber)
+    private function callPingBukAPI($phoneNumber)
 {
     // Prepare the cURL request to the Ping/Buk API
     $curl = curl_init();
@@ -284,74 +283,31 @@ class WhatsAppBotController extends Controller {
     curl_close($curl);
 
     if ($err) {
-        // Log the cURL error
-        \Log::error("cURL Error: " . $err);
         return ['status' => 'error', 'message' => "cURL Error: " . $err];
     } else {
+        // Parse the API response (assuming it's JSON)
+        $decodedResponse = json_decode($response, true);
+        
         // Log the raw API response for debugging
         \Log::info('API Response: ', ['response' => $response]);
 
-        // Parse the API response
-        $decodedResponse = json_decode($response, true);
-        
-        // Check if the response is valid
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return ['status' => 'error', 'message' => 'Invalid JSON response.'];
-        }
-
         // Check the status in the API response
-        if (isset($decodedResponse['status'])) {
-            // Check for status "1" to indicate success
-            if ($decodedResponse['status'] === '1') {
+        if ($decodedResponse && isset($decodedResponse['status'])) {
+            if ($decodedResponse['status'] === '1') { // Update to check for "1" as a success indicator
                 return [
                     'status' => 'success',
-                    'message' => 'Success', // Set a message for success
-                    'data' => $decodedResponse['Data'] // Return the Data array
+                    'data' => $decodedResponse['Data'] // Now return the data array
                 ];
             } else {
-                // Return the message provided in the response
-                return [
-                    'status' => 'error',
-                    'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'
-                ];
+                return ['status' => 'error', 'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'];
             }
         } else {
-            return ['status' => 'error', 'message' => 'Unexpected response structure.'];
+            return ['status' => 'error', 'message' => 'Invalid response structure.'];
         }
-    // Call the API
-// Call the API
-$apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
+    
+        
 
-if ($apiResponse['status'] === 'success') {
-    // Constructing the response message
-    $data = $apiResponse['data']; // Get the Data array from the API response
-    $responseDetails = [];
-
-    // Loop through the data to extract relevant fields
-    foreach ($data as $item) {
-        $responseDetails[] = "IMSI: " . $item['IMSI'] .
-                             ", ICCID: " . $item['ICCID'] .
-                             ", PIN1: " . $item['PIN1'] .
-                             ", PIN2: " . $item['PIN2'] .
-                             ", PUK1: " . $item['PUK1'] .
-                             ", PUK2: " . $item['PUK2'] .
-                             ", Activation Date: " . $item['ActivatioDate'] .
-                             ", SIM Type: " . $item['SimType'];
-    }
-
-    // Join the details into a single string
-    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
-} else {
-    $responseMessage = "Error: " . $apiResponse['message']; // This will still handle any error responses
-}
-
-// Reset the session state after handling the request
-$_SESSION['menu_state'] = 'sim_card';
-unset($_SESSION['ping_buk_number']); // Remove the stored number
-
-
-
-     // Return the response to the view
+        // Return the response to the view
         return back()->with('response', $responseMessage);
     }
 }
