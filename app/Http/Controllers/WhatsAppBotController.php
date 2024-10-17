@@ -251,87 +251,74 @@ class WhatsAppBotController extends Controller
         return back()->with('response', $responseMessage);
     }
 
-   private function callPingBukAPI($phoneNumber)
-{
-    // Prepare the cURL request to the Ping/Buk API
-    $curl = curl_init();
-
-    $postData = json_encode([
-        "Callsub" => $phoneNumber,
-        "UserId" => "imll",
-    ]);
-
-    curl_setopt_array($curl, [
-        CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => $postData,
-        CURLOPT_HTTPHEADER => [
-            "apiTokenUser: CRMUser",
-            "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
-            "Content-Type: application/json"
-        ],
-    ]);
-
-    $response = curl_exec($curl);
-    $err = curl_error($curl);
-
-    curl_close($curl);
-
-    if ($err) {
-        // Log the cURL error
-        \Log::error("cURL Error: " . $err);
-        return ['status' => 'error', 'message' => "cURL Error: " . $err];
-    } else {
-        // Log the raw API response for debugging
-        \Log::info('API Response: ', ['response' => $response]);
-
-        // Parse the API response
-        $decodedResponse = json_decode($response, true);
-        
-        // Check if the response is valid
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return ['status' => 'error', 'message' => 'Invalid JSON response.'];
-        }
-
-        // Check the status in the API response
-        if (isset($decodedResponse['status'])) {
-            // Check for status "1" to indicate success
-            if ($decodedResponse['status'] === '1') {
-                return [
-                    'status' => 'success',
-                    'message' => 'Success', // Set a message for success
-                    'data' => $decodedResponse['Data'] // Return the Data array
-                ];
-            } else {
-                // Return the message provided in the response
-                return [
-                    'status' => 'error',
-                    'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'
-                ];
-            }
+    
+    private function callPingBukAPI($phoneNumber)
+    {
+        // Prepare the cURL request to the Ping/Buk API
+        $curl = curl_init();
+    
+        $postData = json_encode([
+            "Callsub" => $phoneNumber,
+            "UserId" => "imll",
+        ]);
+    
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => $postData,
+            CURLOPT_HTTPHEADER => [
+                "apiTokenUser: CRMUser",
+                "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
+                "Content-Type: application/json"
+            ],
+        ]);
+    
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+    
+        curl_close($curl);
+    
+        if ($err) {
+            // Log the cURL error
+            \Log::error("cURL Error: " . $err);
+            return ['status' => 'error', 'message' => "cURL Error: " . $err];
         } else {
-            return ['status' => 'error', 'message' => 'Unexpected response structure.'];
-        }
-    // Call the API
-$apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
+            // Log the raw API response for debugging
+            \Log::info('API Response: ', ['response' => $response]);
+    
+            // Parse the API response
+            $decodedResponse = json_decode($response, true);
+            
+            // Check if the response is valid
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return ['status' => 'error', 'message' => 'Invalid JSON response.'];
+            }
+    
+            // Check the status in the API response
+            if (isset($decodedResponse['status'])) {
+                // Check for status "1" to indicate success
+                if ($decodedResponse['status'] === '1') {
+                    return [
+                        'status' => 'success',
+                        'data' => $decodedResponse['Data'] // Return the Data array
+                    ];
+                } else {
+                    // Return the message provided in the response
+                    return ['status' => 'error', 'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'];
+                }
+            } else {
+                return ['status' => 'error', 'message' => 'Unexpected response structure.'];
+            }
+        
+    
 
-if ($apiResponse['status'] === 'success') {
-    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: " . json_encode($apiResponse['data']);
-} else {
-    $responseMessage = "Error: " . $apiResponse['message']; // Now this will be defined for both cases
-}
-
-// Reset the session state after handling the request
-$_SESSION['menu_state'] = 'sim_card';
-unset($_SESSION['ping_buk_number']); // Remove the stored number
-
-return back()->with('response', $responseMessage);
-
-
+        // Return the response to the view
+        return back()->with('response', $responseMessage);
+    }
 }
 }
