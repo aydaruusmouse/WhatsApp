@@ -13,7 +13,7 @@ class WhatsAppBotController extends Controller
         $responseMessage = '';
 
         // Start the session if not already started
-         if (!session_id()) {
+        if (!session_id()) {
             session_start();
         }
         
@@ -27,7 +27,7 @@ class WhatsAppBotController extends Controller
             '6. Connect with agent',
         ];
 
-        // ZAAD sub-menu
+        // Sub-menus
         $zaadSubMenu = [
             "1. New ZAAD Account (Information)",
             "2. Merchant (Information)",
@@ -36,15 +36,6 @@ class WhatsAppBotController extends Controller
             "0. Go Back",
         ];
 
-        // Merchant sub-menu
-        $merchantSubMenu = [
-            "1. New Merchant Account",
-            "2. Document Requirements",
-            "3. Support Information",
-            "0. Go Back",
-        ];
-
-        // Internet sub-menu
         $internetSubMenu = [
             "1. New Fiber Service",
             "2. Internet Billing",
@@ -52,7 +43,6 @@ class WhatsAppBotController extends Controller
             "0. Go Back",
         ];
 
-        // Troubleshooting sub-menu
         $troubleshootingSubMenu = [
             "1. Report an Issue",
             "2. FAQs",
@@ -60,22 +50,21 @@ class WhatsAppBotController extends Controller
             "0. Go Back",
         ];
 
-        // Sim-card sub-menu
         $simCardSubMenu = [
             "1. Mushaax",
-            "2. Ping/buk",
+            "2. Ping/Buk",
             "3. Telesom Services",
             "0. Go Back",
         ];
 
-        // Self-support sub-menu
         $selfSupportSubMenu = [
             "1. Account Management",
             "2. Billing Support",
             "3. Service Feedback",
             "0. Go Back",
         ];
-        $cites=[
+
+        $cites = [
             "1. Hargeisa", 
             "2. Burco",
             "3. Berbera",
@@ -86,214 +75,203 @@ class WhatsAppBotController extends Controller
             "8. Laascaanood",
         ];
 
-        $newbundle=[
-            "5MB  $20 Monthly" => "value 20",
-            "7MB $30 Monthly",
-            "15MB $50 Monthly",
-            "20MB $80 Monthly",
-            "35MB $150 Monthly",
-            "More than the above speed",
-        ];
-
         // Default greeting and main menu
         if (in_array($userMessage, ['hi', 'hello', 'morning', 'good morning', 'asc'])) {
-            // Personalize greeting
             $responseMessage = "Good MORNING, Khalid! Please choose what we can help with today:<br>";
             $responseMessage .= implode("<br>", $mainMenu);
-            // Reset the menu state
             $_SESSION['menu_state'] = 'main';
-
         } 
         
         // Handle main menu selections
-          // Handle main menu selections
         elseif ($_SESSION['menu_state'] === 'main') {
-            if ($userMessage === '1') {
-                $responseMessage = "You have chosen ZAAD services. Please select an option:<br>" . implode("<br>", $zaadSubMenu);
-                $_SESSION['menu_state'] = 'zaad';
-            } 
-            elseif ($userMessage === '2') {
-                $responseMessage = "You have chosen Internet services. Please select an option:<br>" . implode("<br>", $internetSubMenu);
-                $_SESSION['menu_state'] = 'internet';
-            } 
-            elseif ($userMessage === '3') {
-                $responseMessage = "You have chosen Troubleshooting services. Please select an option:<br>" . implode("<br>", $troubleshootingSubMenu);
-                $_SESSION['menu_state'] = 'troubleshooting';
-            }
-            elseif ($userMessage === '4') {
-                $responseMessage = "You have chosen Sim Card services. Please select an option:<br>" . implode("<br>", $simCardSubMenu);
-                $_SESSION['menu_state'] = 'sim_card';
-            }
-            elseif ($userMessage === '5') {
-                $responseMessage = "You have chosen Self-support services. Please select an option:<br>" . implode("<br>", $selfSupportSubMenu);
-                $_SESSION['menu_state'] = 'self_support';
-            }
-            elseif ($userMessage === '6') {
-                $responseMessage = "Connecting you with an agent. Please hold on...";
-                $_SESSION['menu_state'] = 'main'; // Reset to main menu
-            }
-            else {
-                $responseMessage = "Sorry, I didn’t understand that. Please type 'hi' or 'hello' to start again.";
+            switch ($userMessage) {
+                case '1':
+                    $responseMessage = "You have chosen ZAAD services. Please select an option:<br>" . implode("<br>", $zaadSubMenu);
+                    $_SESSION['menu_state'] = 'zaad';
+                    break;
+                case '2':
+                    $responseMessage = "You have chosen Internet services. Please select an option:<br>" . implode("<br>", $internetSubMenu);
+                    $_SESSION['menu_state'] = 'internet';
+                    break;
+                case '3':
+                    $responseMessage = "You have chosen Troubleshooting services. Please select an option:<br>" . implode("<br>", $troubleshootingSubMenu);
+                    $_SESSION['menu_state'] = 'troubleshooting';
+                    break;
+                case '4':
+                    $responseMessage = "You have chosen Sim Card services. Please select an option:<br>" . implode("<br>", $simCardSubMenu);
+                    $_SESSION['menu_state'] = 'sim_card';
+                    break;
+                case '5':
+                    $responseMessage = "You have chosen Self-support services. Please select an option:<br>" . implode("<br>", $selfSupportSubMenu);
+                    $_SESSION['menu_state'] = 'self_support';
+                    break;
+                case '6':
+                    $responseMessage = "Connecting you with an agent. Please hold on...";
+                    $_SESSION['menu_state'] = 'main'; // Reset to main menu
+                    break;
+                default:
+                    $responseMessage = "Sorry, I didn’t understand that. Please type 'hi' or 'hello' to start again.";
+                    break;
             }
         } 
 
         // Handle sub-menu options based on the current state
         elseif ($_SESSION['menu_state'] === 'zaad') {
-            if ($userMessage === '1') {
-                $responseMessage = "To create a new ZAAD account, please provide your details.";
-            } elseif ($userMessage === '2') {
-                $responseMessage = "For Merchant information, please visit our website.";
-            } elseif ($userMessage === '3') {
-                $responseMessage = "For wrong ZAAD transfer support, please provide the transaction details.";
-            } elseif ($userMessage === '4') {
-                $responseMessage = "To check your last ZAAD transactions, please provide your account number.";
-            } elseif ($userMessage === '0') {
-                $responseMessage = "Going back to the main menu...";
-                $_SESSION['menu_state'] = 'main';
-                $responseMessage .= "<br>" . implode("<br>", $mainMenu);
-            } else {
-                $responseMessage = "Invalid option. Please select from the ZAAD submenu:<br>" . implode("<br>", $zaadSubMenu);
-            }
+            $responseMessage = $this->handleZaadSubMenu($userMessage);
         } elseif ($_SESSION['menu_state'] === 'internet') {
-            // Handle Internet sub-menu options
-            if ($userMessage === '1') {
-                $responseMessage = "To order a new fiber service, please provide your address:<br>" . implode("<br>", $cites);
-                
-
-                
-
-            } elseif ($userMessage === '2') {
-                $responseMessage = "For internet billing inquiries, please provide your account number.";
-            } elseif ($userMessage === '3') {
-                $responseMessage = "For troubleshooting, please describe the issue.";
-            } elseif ($userMessage === '0') {
-                $responseMessage = "Going back to the main menu...";
-                $_SESSION['menu_state'] = 'main';
-                $responseMessage .= "<br>" . implode("<br>", $mainMenu);
-            } else {
-                $responseMessage = "Invalid option. Please select from the Internet submenu:<br>" . implode("<br>", $internetSubMenu);
-            }
-        }  
-        elseif ($_SESSION['menu_state'] === 'troubleshooting') {
-            // Handle Troubleshooting sub-menu options
-            if ($userMessage === '1') {
-                $responseMessage = "Please describe the issue you are facing.";
-            } elseif ($userMessage === '2') {
-                $responseMessage = "Here are some FAQs: [FAQ List].";
-            } elseif ($userMessage === '3') {
-                $responseMessage = "Connecting you to live support...";
-            } elseif ($userMessage === '0') {
-                $responseMessage = "Going back to the main menu...";
-                $_SESSION['menu_state'] = 'main';
-                $responseMessage .= "<br>" . implode("<br>", $mainMenu);
-            } else {
-                $responseMessage = "Invalid option. Please select from the Troubleshooting submenu:<br>" . implode("<br>", $troubleshootingSubMenu);
-            }
+            $responseMessage = $this->handleInternetSubMenu($userMessage, $cites);
+        } elseif ($_SESSION['menu_state'] === 'troubleshooting') {
+            $responseMessage = $this->handleTroubleshootingSubMenu($userMessage);
         } elseif ($_SESSION['menu_state'] === 'sim_card') {
-            // Handle Sim-card sub-menu options
-            if ($userMessage === '1') {
-                $responseMessage = "To get a new Sim Card, please visit the nearest Telesom branch.";
-            } elseif ($userMessage === '2') {
-                if (!isset($_SESSION['ping_buk_number'])) {
-                    $responseMessage = "Please enter your phone number for Ping/Buk:";
-                    $_SESSION['menu_state'] = 'ping_buk_number_entry'; // Set a new state to handle number entry
-                }
-            } elseif ($userMessage === '3') {
-                $responseMessage = "To replace your Sim Card, please visit the nearest branch and provide your ID.";
-            } elseif ($userMessage === '0') {
-                $responseMessage = "Going back to the main menu...";
-                $_SESSION['menu_state'] = 'main';
-                $responseMessage .= "<br>" . implode("<br>", $mainMenu);
-            } else {
-                $responseMessage = "Invalid option. Please select from the Sim-card submenu:<br>" . implode("<br>", $simCardSubMenu);
-            }
+            $responseMessage = $this->handleSimCardSubMenu($userMessage);
         } elseif ($_SESSION['menu_state'] === 'self_support') {
-            // Handle Self-support sub-menu options
-            if ($userMessage === '1') {
-                $responseMessage = "To manage your account, please log in to your online account or call customer support.";
-            } elseif ($userMessage === '2') {
-                $responseMessage = "For billing support, please provide your account number.";
-            } elseif ($userMessage === '3') {
-                $responseMessage = "We appreciate your feedback. Please let us know your thoughts.";
-            } elseif ($userMessage === '0') {
-                $responseMessage = "Going back to the main menu...";
-                $_SESSION['menu_state'] = 'main';
-                $responseMessage .= "<br>" . implode("<br>", $mainMenu);
-            } else {
-                $responseMessage = "Invalid option. Please select from the Self-support submenu:<br>" . implode("<br>", $selfSupportSubMenu);
-            }
+            $responseMessage = $this->handleSelfSupportSubMenu($userMessage);
         }
 
-         // Handle Ping/Buk number entry
-         if ($_SESSION['menu_state'] === 'ping_buk_number_entry') {
-            // Validate the phone number (basic validation, you can make this more complex)
-            if (is_numeric($userMessage) && strlen($userMessage) === 9) {
-                $_SESSION['ping_buk_number'] = $userMessage;
-
-                // Call the API
-                $apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
-                
-                if ($apiResponse['status'] === 'success') {
-                    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: " . $apiResponse['message'];
-                } else {
-                    $responseMessage = "Error: " . $apiResponse['message'];
-                }
-
-                // Reset the session state after handling the request
-                $_SESSION['menu_state'] = 'sim_card';
-                unset($_SESSION['ping_buk_number']); // Remove the stored number
-            } else {
-                $responseMessage = "Please enter a valid 7-digit number:";
-            }
-            return back()->with('response', $responseMessage);
+        // Handle Ping/Buk number entry
+        if ($_SESSION['menu_state'] === 'ping_buk_number_entry') {
+            $responseMessage = $this->handlePingBukNumberEntry($userMessage);
         }
 
         return back()->with('response', $responseMessage);
     }
 
-    
-   private function callPingBukAPI($phoneNumber)
-{
-    // Prepare the cURL request to the Ping/Buk API
-    $curl = curl_init();
+    private function handleZaadSubMenu($userMessage)
+    {
+        switch ($userMessage) {
+            case '1':
+                return "To create a new ZAAD account, please provide your details.";
+            case '2':
+                return "For Merchant information, please visit our website.";
+            case '3':
+                return "For wrong ZAAD transfer support, please provide the transaction details.";
+            case '4':
+                return "To check your last ZAAD transactions, please provide your account number.";
+            case '0':
+                $_SESSION['menu_state'] = 'main';
+                return "Going back to the main menu...<br>" . implode("<br>", $mainMenu);
+            default:
+                return "Invalid option. Please select from the ZAAD submenu:<br>" . implode("<br>", $zaadSubMenu);
+        }
+    }
 
-    $postData = json_encode([
-        "Callsub" => $phoneNumber,
-        "UserId" => "imll",
-    ]);
+    private function handleInternetSubMenu($userMessage, $cites)
+    {
+        switch ($userMessage) {
+            case '1':
+                return "To order a new fiber service, please provide your address:<br>" . implode("<br>", $cites);
+            case '2':
+                return "For internet billing inquiries, please provide your account number.";
+            case '3':
+                return "For troubleshooting, please describe the issue.";
+            case '0':
+                $_SESSION['menu_state'] = 'main';
+                return "Going back to the main menu...<br>" . implode("<br>", $mainMenu);
+            default:
+                return "Invalid option. Please select from the Internet submenu:<br>" . implode("<br>", $internetSubMenu);
+        }
+    }
 
-    curl_setopt_array($curl, [
-        CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => $postData,
-        CURLOPT_HTTPHEADER => [
-            "apiTokenUser: CRMUser",
-            "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
-            "Content-Type: application/json"
-        ],
-    ]);
+    private function handleTroubleshootingSubMenu($userMessage)
+    {
+        switch ($userMessage) {
+            case '1':
+                return "Please describe the issue you are facing.";
+            case '2':
+                return "Here are some FAQs: [FAQ List].";
+            case '3':
+                return "Connecting you to live support...";
+            case '0':
+                $_SESSION['menu_state'] = 'main';
+                return "Going back to the main menu...<br>" . implode("<br>", $mainMenu);
+            default:
+                return "Invalid option. Please select from the Troubleshooting submenu:<br>" . implode("<br>", $troubleshootingSubMenu);
+        }
+    }
 
-    $response = curl_exec($curl);
-    $err = curl_error($curl);
+    private function handleSimCardSubMenu($userMessage)
+    {
+        switch ($userMessage) {
+            case '1':
+                return "To get a new Sim Card, please visit the nearest Telesom branch.";
+            case '2':
+                $_SESSION['menu_state'] = 'ping_buk_number_entry'; // Set a new state to handle number entry
+                return "Please enter your phone number for Ping/Buk:";
+            case '3':
+                return "To replace your Sim Card, please visit the nearest branch and provide your ID.";
+            case '0':
+                $_SESSION['menu_state'] = 'main';
+                return "Going back to the main menu...<br>" . implode("<br>", $mainMenu);
+            default:
+                return "Invalid option. Please select from the Sim-card submenu:<br>" . implode("<br>", $simCardSubMenu);
+        }
+    }
 
-    curl_close($curl);
+    private function handleSelfSupportSubMenu($userMessage)
+    {
+        switch ($userMessage) {
+            case '1':
+                return "To manage your account, please log in to your online account or call customer support.";
+            case '2':
+                return "For billing support, please provide your account number.";
+            case '3':
+                return "We appreciate your feedback. Please let us know your thoughts.";
+            case '0':
+                $_SESSION['menu_state'] = 'main';
+                return "Going back to the main menu...<br>" . implode("<br>", $mainMenu);
+            default:
+                return "Invalid option. Please select from the Self-support submenu:<br>" . implode("<br>", $selfSupportSubMenu);
+        }
+    }
 
-    if ($err) {
-        // Log the cURL error
-        \Log::error("cURL Error: " . $err);
-        return ['status' => 'error', 'message' => "cURL Error: " . $err];
-    } else {
-        // Log the raw API response for debugging
-        \Log::info('API Response: ', ['response' => $response]);
+    private function handlePingBukNumberEntry($userMessage)
+    {
+        // Validate the phone number (basic validation, you can make this more complex)
+        if (is_numeric($userMessage) && strlen($userMessage) === 9) {
+            $_SESSION['ping_buk_number'] = $userMessage; // Store the entered number
+            $apiResponse = $this->callPingBukAPI($userMessage);
+
+            // Check the response from the API and build a message
+            if ($apiResponse['status'] === 'success') {
+                return "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nDetails: " . $apiResponse['message'];
+            } else {
+                return "Error: " . $apiResponse['message'];
+            }
+        } else {
+            return "Invalid phone number. Please enter a valid 9-digit phone number:";
+        }
+    }
+
+    private function callPingBukAPI($phoneNumber)
+    {
+        // Replace with actual API endpoint and API key if needed
+        $apiUrl = "https://api.example.com/pingbuk";
+        $apiKey = "your_api_key"; // Replace with your API key
+        
+        // Initialize a cURL session
+        $curl = curl_init($apiUrl);
+
+        // Set cURL options
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, [
+            "Authorization: Bearer $apiKey",
+            "Content-Type: application/json",
+        ]);
+
+        // Execute the API call
+        $response = curl_exec($curl);
+        
+        // Handle any errors
+        if (curl_errno($curl)) {
+            return ['status' => 'error', 'message' => 'API request failed: ' . curl_error($curl)];
+        }
+
+        // Close the cURL session
+        curl_close($curl);
 
         // Parse the API response
         $decodedResponse = json_decode($response, true);
-        
+
         // Check if the response is valid
         if (json_last_error() !== JSON_ERROR_NONE) {
             return ['status' => 'error', 'message' => 'Invalid JSON response.'];
@@ -301,58 +279,18 @@ class WhatsAppBotController extends Controller
 
         // Check the status in the API response
         if (isset($decodedResponse['status'])) {
-            // Check for status "1" to indicate success
-            if ($decodedResponse['status'] === '1') {
+            // Assuming 'status' is 'success' and there are additional details in the response
+            if ($decodedResponse['status'] === 'success') {
+                $details = $decodedResponse['details'] ?? 'No additional details available.';
                 return [
                     'status' => 'success',
-                    'message' => 'Success', // Set a message for success
-                    'data' => $decodedResponse['Data'] // Return the Data array
+                    'message' => $details,
                 ];
             } else {
-                // Return the message provided in the response
-                return [
-                    'status' => 'error',
-                    'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'
-                ];
+                return ['status' => 'error', 'message' => $decodedResponse['message'] ?? 'An error occurred.'];
             }
         } else {
-            return ['status' => 'error', 'message' => 'Unexpected response structure.'];
+            return ['status' => 'error', 'message' => 'Response status not found.'];
         }
-    // Call the API
-// Call the API
-$apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
-
-if ($apiResponse['status'] === 'success') {
-    // Constructing the response message
-    $data = $apiResponse['data']; // Get the Data array from the API response
-    $responseDetails = [];
-
-    // Loop through the data to extract relevant fields
-    foreach ($data as $item) {
-        $responseDetails[] = "IMSI: " . $item['IMSI'] .
-                             ", ICCID: " . $item['ICCID'] .
-                             ", PIN1: " . $item['PIN1'] .
-                             ", PIN2: " . $item['PIN2'] .
-                             ", PUK1: " . $item['PUK1'] .
-                             ", PUK2: " . $item['PUK2'] .
-                             ", Activation Date: " . $item['ActivatioDate'] .
-                             ", SIM Type: " . $item['SimType'];
     }
-
-    // Join the details into a single string
-    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
-} else {
-    $responseMessage = "Error: " . $apiResponse['message']; // This will still handle any error responses
-}
-
-// Reset the session state after handling the request
-$_SESSION['menu_state'] = 'sim_card';
-unset($_SESSION['ping_buk_number']); // Remove the stored number
-
-
-
-     // Return the response to the view
-        return back()->with('response', $responseMessage);
-    }
-}
 }
