@@ -250,50 +250,60 @@ class WhatsAppBotController extends Controller
 
         return back()->with('response', $responseMessage);
     }
+private function callPingBukAPI($phoneNumber)
+{
+    // Prepare the cURL request to the Ping/Buk API
+    $curl = curl_init();
 
-    private function callPingBukAPI($phoneNumber)
-    {
-        // Prepare the cURL request to the Ping/Buk API
-        $curl = curl_init();
+    $postData = json_encode([
+        "Callsub" => $phoneNumber,
+        "UserId" => "imll",
+    ]);
 
-        $postData = json_encode([
-            "Callsub" => $phoneNumber,
-            "UserId" => "imll",
-        ]);
+    curl_setopt_array($curl, [
+        CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "POST",
+        CURLOPT_POSTFIELDS => $postData,
+        CURLOPT_HTTPHEADER => [
+            "apiTokenUser: CRMUser",
+            "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
+            "Content-Type: application/json"
+        ],
+    ]);
 
-        curl_setopt_array($curl, [
-            CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => "POST",
-            CURLOPT_POSTFIELDS => $postData,
-            CURLOPT_HTTPHEADER => [
-                "apiTokenUser: CRMUser",
-                "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
-                "Content-Type: application/json"
-            ],
-        ]);
+    $response = curl_exec($curl);
+    $err = curl_error($curl);
 
-        $response = curl_exec($curl);
-        $err = curl_error($curl);
+    curl_close($curl);
 
-        curl_close($curl);
-
-        if ($err) {
-            return ['status' => 'error', 'message' => "cURL Error: " . $err];
-        } else {
-            // Parse the API response (assuming it's JSON)
-            $decodedResponse = json_decode($response, true);
-            if ($decodedResponse && isset($decodedResponse['status']) && $decodedResponse['status'] == 'success') {
-                return ['status' => 'success', 'message' => $decodedResponse['data']]; // Modify based on API response structure
-            } else {
-                return ['status' => 'error', 'message' => 'Failed to fetch details.'];
-            }
-    
+    if ($err) {
+        return ['status' => 'error', 'message' => "cURL Error: " . $err];
+    } else {
+        // Parse the API response (assuming it's JSON)
+        $decodedResponse = json_decode($response, true);
         
+        // Log the raw API response for debugging
+        \Log::info('API Response: ', ['response' => $response]);
+
+        // Check the status in the API response
+        if ($decodedResponse && isset($decodedResponse['status'])) {
+            if ($decodedResponse['status'] === '1') { // Update to check for "1" as a success indicator
+                return [
+                    'status' => 'success',
+                    'data' => $decodedResponse['Data'] // Now return the data array
+                ];
+            } else {
+                return ['status' => 'error', 'message' => $decodedResponse['Message'] ?? 'An unknown error occurred.'];
+            }
+        } else {
+            return ['status' => 'error', 'message' => 'Invalid response structure.'];
+        }
+    
 
         // Return the response to the view
         return back()->with('response', $responseMessage);
