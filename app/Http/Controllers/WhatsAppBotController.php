@@ -119,66 +119,85 @@ class WhatsAppBotController extends Controller
     }
 
    private function callPingBukAPI($phoneNumber)
-{
-    // Prepare the cURL request to the Ping/Buk API
-    $curl = curl_init();
-
-    $postData = json_encode([
-        "Callsub" => $phoneNumber,
-        "UserId" => "imll",
-    ]);
-
-    curl_setopt_array($curl, [
-        CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => "",
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => "POST",
-        CURLOPT_POSTFIELDS => $postData,
-        CURLOPT_HTTPHEADER => [
-            "apiTokenUser: CRMUser",
-            "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
-            "Content-Type: application/json"
-        ],
-    ]);
-
-    $response = curl_exec($curl);
-    $err = curl_error($curl);
-    curl_close($curl);
-
-    if ($err) {
-        // Log the cURL error
-        \Log::error("cURL Error: " . $err);
-        return ['status' => 'error', 'message' => "cURL Error: " . $err];
-    } else {
-        // Log the raw API response for debugging
-        \Log::info('API Response: ', ['response' => $response]);
-        $decodedResponse = json_decode($response, true);
-
-        // Check if the response is valid JSON
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return ['status' => 'error', 'message' => 'Invalid JSON response.'];
-        }
-
-        // Check for the status and message in the API response
-        if (isset($decodedResponse['status']) && isset($decodedResponse['Message'])) {
-            // Check for success status
-            if ($decodedResponse['status'] === '1' && $decodedResponse['Message'] === 'success') {
+    {
+        // Prepare the cURL request to the Ping/Buk API
+        $curl = curl_init();
+    
+        $postData = json_encode([
+            "Callsub" => $phoneNumber,
+            "UserId" => "imll",
+        ]);
+    
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "http://10.55.1.143:8983/api/CRMApi/GetSimDetails",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => $postData,
+            CURLOPT_HTTPHEADER => [
+                "apiTokenUser: CRMUser",
+                "apiTokenPwd: ZEWOALJNADSLLAIE321@!",
+                "Content-Type: application/json"
+            ],
+        ]);
+    
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+    
+        curl_close($curl);
+    
+        if ($err) {
+            return ['status' => 'error', 'message' => "cURL Error: " . $err];
+        } else {
+            // Parse the API response (assuming it's JSON)
+            $decodedResponse = json_decode($response, true);
+            
+            if ($decodedResponse && isset($decodedResponse['status']) && $decodedResponse['status'] == '1') {
+                // Return the decoded data as well
                 return [
-                    'status' => 'success', 
-                    'message' => isset($decodedResponse['Data']) ? $decodedResponse['Data'] : 'No data available.'
+                    'status' => 'success',
+                    'message' => 'Success',
+                    'data' => $decodedResponse['Data'] // Change here to return the Data array
                 ];
             } else {
-                // Check if 'Message' key exists before accessing it
-                $errorMessage = isset($decodedResponse['Message']) ? $decodedResponse['Message'] : 'Unknown error occurred.';
-                return ['status' => 'error', 'message' => $errorMessage];
+                return ['status' => 'error', 'message' => 'Failed to fetch details.'];
             }
-        } else {
-            return ['status' => 'error', 'message' => 'Invalid response structure.'];
-        }
-    
+   // Call the API
+$apiResponse = $this->callPingBukAPI($_SESSION['ping_buk_number']);
+
+if ($apiResponse['status'] === 'success') {
+    // Constructing the response message
+    $data = $apiResponse['data']; // Get the Data array from the API response
+    $responseDetails = [];
+
+    // Loop through the data to extract relevant fields
+    foreach ($data as $item) {
+        $responseDetails[] = "IMSI: " . $item['IMSI'] .
+                             ", ICCID: " . $item['ICCID'] .
+                             ", PIN1: " . $item['PIN1'] .
+                             ", PIN2: " . $item['PIN2'] .
+                             ", PUK1: " . $item['PUK1'] .
+                             ", PUK2: " . $item['PUK2'] .
+                             ", Activation Date: " . $item['ActivatioDate'] .
+                             ", SIM Type: " . $item['SimType'];
+    }
+
+    // Join the details into a single string
+    $responseMessage = "Ping/Buk details for number: " . $_SESSION['ping_buk_number'] . "\nResponse: Success\nDetails:\n" . implode("\n", $responseDetails);
+} else {
+    $responseMessage = "Error: " . $apiResponse['message']; // This will still handle any error responses
+}
+
+// Reset the session state after handling the request
+$_SESSION['menu_state'] = 'sim_card';
+unset($_SESSION['ping_buk_number']); // Remove the stored number
+
+return back()->with('response', $responseMessage);
+
+
         }
     }
 }
