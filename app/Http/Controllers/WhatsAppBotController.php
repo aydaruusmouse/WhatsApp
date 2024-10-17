@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class WhatsAppBotController extends Controller
-{
+class WhatsAppBotController extends Controller {
     public function testMessage(Request $request)
     {
         // Get the message sent by the user
@@ -355,4 +354,5 @@ unset($_SESSION['ping_buk_number']); // Remove the stored number
      // Return the response to the view
         return back()->with('response', $responseMessage);
     }
+}
 }
